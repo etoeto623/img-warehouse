@@ -10,7 +10,7 @@ import (
 	"neolong.me/img-warehouse/common"
 )
 
-func getImageContent(path string) (*common.ImgViewRespData, error) {
+func GetImageData(path string) (*common.ImgViewRespData, error) {
 	imgGetUrl := fmt.Sprintf("%s%s", common.ALIST_URL, common.IMAGE_GET_API)
 
 	payload := strings.NewReader(genImgViewParamStr(path))

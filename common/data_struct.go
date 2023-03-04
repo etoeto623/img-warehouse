@@ -15,7 +15,7 @@ type ImgViewRespData struct {
 }
 
 type ImgViewResp struct {
-	Code    int8            `json:"code"`
+	Code    uint8           `json:"code"`
 	Message string          `json:"message"`
 	Data    ImgViewRespData `json:"data"`
 }
