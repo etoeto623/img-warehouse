@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io/ioutil"
 	"net/http"
 
 	"neolong.me/img-warehouse/common"
@@ -28,5 +29,21 @@ func imgViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, imgData.RawUrl, http.StatusFound)
+	content, err := readContentFromRawUrl(imgData.RawUrl)
+	if nil != err {
+		w.Write(common.StrToBytes("read image data fila"))
+		return
+	}
+
+	w.Write(content)
+}
+
+func readContentFromRawUrl(rawUrl string) ([]byte, error) {
+	resp, err := http.DefaultClient.Get(rawUrl)
+	if nil != err {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }
