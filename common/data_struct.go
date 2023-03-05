@@ -19,3 +19,18 @@ type ImgViewResp struct {
 	Message string          `json:"message"`
 	Data    ImgViewRespData `json:"data"`
 }
+
+type ImageUploadMeta struct {
+	LocalFilePath string `json:"local_file_path"`
+	FromClipboard bool   `json:"from_clipboard"`
+	FileName      string `json:"file_name"`
+}
+
+type EnvConfig struct {
+	ServerPort    int    `json:"port"`
+	ImageViewApi  string `json:"image_view_api"`
+	AlistUrl      string `json:"alist_url"`
+	AlistPassword string `json:"alist_password"`
+	ServerUrl     string `json:"server_url"`
+	AesKey        string `json:"aes_key"`
+}

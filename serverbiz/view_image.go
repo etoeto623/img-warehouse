@@ -10,10 +10,10 @@ import (
 	"neolong.me/img-warehouse/common"
 )
 
-func GetImageData(path string) (*common.ImgViewRespData, error) {
-	imgGetUrl := fmt.Sprintf("%s%s", common.ALIST_URL, common.IMAGE_GET_API)
+func GetImageData(path string, cfg *common.EnvConfig) (*common.ImgViewRespData, error) {
+	imgGetUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_GET_API)
 
-	payload := strings.NewReader(genImgViewParamStr(path))
+	payload := strings.NewReader(genImgViewParamStr(path, cfg))
 
 	resp, err := http.Post(imgGetUrl, "application/json;charset=UTF-8", payload)
 	if nil != err {
@@ -34,10 +34,10 @@ func GetImageData(path string) (*common.ImgViewRespData, error) {
 	return &respJson.Data, nil
 }
 
-func genImgViewParamStr(path string) string {
+func genImgViewParamStr(path string, cfg *common.EnvConfig) string {
 	paramJson := common.ImgViewParam{
 		Path:     path,
-		Password: common.ALIST_PASSWORD,
+		Password: cfg.AlistPassword,
 	}
 
 	bytes, _ := json.Marshal(paramJson)
