@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 
+	"golang.design/x/clipboard"
 	"neolong.me/img-warehouse/client"
 	"neolong.me/img-warehouse/common"
 	"neolong.me/img-warehouse/server"
@@ -38,22 +39,22 @@ func main() {
 	}
 
 	// client mode
-
 	meta := common.ImageUploadMeta{}
-
 	if nil != localFile {
 		meta.LocalFilePath = *localFile
 	}
-
 	if nil != fileName {
 		meta.FileName = *fileName
 	}
-
 	meta.FromClipboard = nil == localFile || len(*localFile) <= 0
 
 	fname, err := client.UploadImage(&config, &meta)
 	if nil != err {
 		fmt.Println("error:", err.Error())
 	}
-	fmt.Printf("%s%s?vid=%s\n", config.ServerUrl, config.ImageViewApi, fname)
+	uploadedImgUrl := fmt.Sprintf("%s%s?vid=%s", config.ServerUrl, config.ImageViewApi, fname)
+	if nil == clipboard.Init() {
+		clipboard.Write(clipboard.FmtText, common.StrToBytes(uploadedImgUrl))
+	}
+	fmt.Println(uploadedImgUrl)
 }
