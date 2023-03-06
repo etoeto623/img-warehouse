@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"golang.design/x/clipboard"
+	"golang.design/x/hotkey"
+	"golang.design/x/hotkey/mainthread"
 	"neolong.me/img-warehouse/client"
 	"neolong.me/img-warehouse/common"
 	"neolong.me/img-warehouse/server"
@@ -19,6 +21,7 @@ func main() {
 	localFile := flag.String("f", "", "local image file path")
 	serverPort := flag.Int("p", 0, "server port")
 	imageViewApi := flag.String("api", "", "image view api prefix in server")
+	daemonMode := flag.Bool("d", false, "run as a daemon service")
 
 	flag.Parse()
 
@@ -29,13 +32,35 @@ func main() {
 	if nil != imageViewApi && len(*imageViewApi) > 0 {
 		config.ImageViewApi = *imageViewApi
 	}
+	if len(config.AesKey) <= 0 {
+		config.AesKey = common.AES_KEY
+	}
+
+	if nil != daemonMode && *daemonMode {
+		mainthread.Init(func() {
+			hk := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
+			err := hk.Register()
+			if err != nil {
+				fmt.Printf("hotkey: failed to register hotkey: %v", err)
+			}
+			defer func() {
+				fmt.Println("imghouse hotkey unregisted")
+				hk.Unregister()
+			}()
+
+			for {
+				<-hk.Keyup()
+				meta := common.ImageUploadMeta{}
+				meta.FromClipboard = true
+				doSendImage(&config, &meta)
+			}
+		})
+		return
+	}
 
 	if nil != serverMode && *serverMode {
 		server.StartServer(&config)
 		return
-	}
-	if len(config.AesKey) <= 0 {
-		config.AesKey = common.AES_KEY
 	}
 
 	// client mode
@@ -48,7 +73,11 @@ func main() {
 	}
 	meta.FromClipboard = nil == localFile || len(*localFile) <= 0
 
-	fname, err := client.UploadImage(&config, &meta)
+	doSendImage(&config, &meta)
+}
+
+func doSendImage(config *common.EnvConfig, meta *common.ImageUploadMeta) {
+	fname, err := client.UploadImage(config, meta)
 	if nil != err {
 		fmt.Println("error:", err.Error())
 	}
