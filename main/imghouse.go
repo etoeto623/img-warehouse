@@ -39,20 +39,28 @@ func main() {
 	if nil != daemonMode && *daemonMode {
 		mainthread.Init(func() {
 			hk := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyS)
-			err := hk.Register()
-			if err != nil {
-				fmt.Printf("hotkey: failed to register hotkey: %v", err)
+			if err := hk.Register(); nil != err {
+				fmt.Printf("hotkey: failed to register hotkey: %v\n", err)
+				return
 			}
-			defer func() {
-				fmt.Println("imghouse hotkey unregisted")
-				hk.Unregister()
-			}()
+			defer hk.Unregister()
+
+			quitKey := hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyQ)
+			if err2 := quitKey.Register(); nil != err2 {
+				fmt.Printf("hotkey: failed to register hotkey: %v\n", err2)
+				return
+			}
+			defer quitKey.Unregister()
 
 			for {
-				<-hk.Keyup()
-				meta := common.ImageUploadMeta{}
-				meta.FromClipboard = true
-				doSendImage(&config, &meta)
+				select {
+				case <-hk.Keyup():
+					meta := common.ImageUploadMeta{}
+					meta.FromClipboard = true
+					doSendImage(&config, &meta)
+				case <-quitKey.Keyup():
+					return
+				}
 			}
 		})
 		return
