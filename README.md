@@ -35,6 +35,11 @@ imghouse -s
 ``` bash
 imghouse [-fn fileName] [-f local image file path]
 ```
+或者做为daemon服务：
+``` bash
+nohup imghouse -d >/dev/null 2>&1 &
+```
+然后使用快捷键 `Ctrl+Shift+S`进行图片发送
 ## 配置示例
 ``` json
 {
