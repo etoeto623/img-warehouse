@@ -26,6 +26,14 @@ type ImageUploadMeta struct {
 	FileName      string `json:"file_name"`
 }
 
+type ImageListMeta struct {
+	Page     int    `json:"page"`
+	Password string `json:"password"`
+	Path     string `json:"path"`
+	PerPage  int    `json:"per_page"`
+	Refresh  bool   `json:"refresh"`
+}
+
 type EnvConfig struct {
 	ServerPort    int    `json:"port"`
 	ImageViewApi  string `json:"image_view_api"`

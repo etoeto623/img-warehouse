@@ -40,6 +40,5 @@ func genImgViewParamStr(path string, cfg *common.EnvConfig) string {
 		Password: cfg.AlistPassword,
 	}
 
-	bytes, _ := json.Marshal(paramJson)
-	return string(bytes)
+	return common.StructToString(paramJson)
 }

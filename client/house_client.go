@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"golang.design/x/clipboard"
 	"neolong.me/img-warehouse/common"
@@ -26,9 +27,27 @@ func UploadImage(cfg *common.EnvConfig, meta *common.ImageUploadMeta) (string, e
 	if nil != err {
 		return "", err
 	}
+	refreshWarehouseList(cfg)
 
 	encryptedFname, _ := cipher.AesEncryptString("/"+fname, cfg.AesKey)
 	return encryptedFname, nil
+}
+
+// 刷新仓库的资源列表
+func refreshWarehouseList(cfg *common.EnvConfig) {
+	data := common.ImageListMeta{
+		Page:     1,
+		PerPage:  0,
+		Path:     "/",
+		Password: cfg.AlistPassword,
+		Refresh:  true,
+	}
+	refreshUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_LIST_API)
+	payload := strings.NewReader(common.StructToString(data))
+	if req, err := http.NewRequest(http.MethodPost, refreshUrl, payload); nil == err {
+		req.Header.Add("Content-Type", "application/json; charset=utf-8")
+		http.DefaultClient.Do(req)
+	}
 }
 
 func getImageContentFromMeta(meta *common.ImageUploadMeta) ([]byte, error) {
