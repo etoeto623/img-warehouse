@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	serverMode := flag.Bool("s", false, "run as server")
 	// clientMode := flag.Bool("c", true, "run as client")
 
@@ -84,6 +83,7 @@ func main() {
 	doSendImage(&config, &meta)
 }
 
+// 上传图片数据
 func doSendImage(config *common.EnvConfig, meta *common.ImageUploadMeta) {
 	fname, err := client.UploadImage(config, meta)
 	if nil != err {

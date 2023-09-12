@@ -47,6 +47,7 @@ nohup imghouse -d >/dev/null 2>&1 &
     "image_view_api": "view",
     "alist_url": "http://xxx.xxx:5244",
     "alist_password": "xxxx",
+    "alist_user": "sss",
     "server_url": "http://xxx.xxx",
     "aes_key": "xvvsdsdf"
 }

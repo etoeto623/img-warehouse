@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -66,8 +67,8 @@ func getImgDataFromClipboard() ([]byte, error) {
 	return clipboard.Read(clipboard.FmtImage), nil
 }
 
+// 发送数据到alist服务端
 func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUploadMeta) (string, error) {
-
 	uploadUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_UPLOAD_API)
 	payload := bytes.NewReader(data)
 	req, err := http.NewRequest(http.MethodPut, uploadUrl, payload)
@@ -83,7 +84,13 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 	req.Header.Add("Content-Length", strconv.Itoa(len(data)))
 	req.Header.Add("Content-Type", "image/png")
 	req.Header.Add("File-Path", "%2F"+fileName)
-	req.Header.Add("Password", cfg.AlistPassword)
+	if len(cfg.AlistPassword) <= 0 {
+		// 没指定密码，则从服务器获取
+		req.Header.Add("Authorization", acquireToken(cfg))
+	} else {
+		// 默认使用guest用户
+		req.Header.Add("Password", cfg.AlistPassword)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if nil != err {
@@ -97,4 +104,34 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 		return "", err
 	}
 	return fileName, nil
+}
+
+func acquireToken(cfg *common.EnvConfig) string {
+	tokenUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.SERVER_TOKEN_API)
+	req, err := http.NewRequest(http.MethodPut, tokenUrl, nil)
+	if nil != err {
+		fmt.Println("shit happens", err.Error())
+		os.Exit(1)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if nil != err {
+		fmt.Println("shit happens", err.Error())
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		fmt.Println("shit happens", err.Error())
+		os.Exit(1)
+	}
+
+	tokenBytes, err := cipher.AesDecrypt(respBytes, cfg.AesKey)
+	if nil != err {
+		fmt.Println("shit happens", err.Error())
+		os.Exit(1)
+	}
+
+	return string(tokenBytes)
 }

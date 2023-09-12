@@ -39,6 +39,7 @@ type EnvConfig struct {
 	ImageViewApi  string `json:"image_view_api"`
 	AlistUrl      string `json:"alist_url"`
 	AlistPassword string `json:"alist_password"`
+	AlistUser     string `json:"alist_user"`
 	ServerUrl     string `json:"server_url"`
 	AesKey        string `json:"aes_key"`
 }
