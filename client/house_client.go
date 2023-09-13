@@ -13,6 +13,7 @@ import (
 
 	"golang.design/x/clipboard"
 	"neolong.me/img-warehouse/common"
+	"neolong.me/img-warehouse/serverbiz"
 	"neolong.me/neotools/cipher"
 )
 
@@ -111,6 +112,7 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 	}
 	if int(bodyMap["code"].(float64)) != 200 {
 		if couldTry {
+			serverbiz.AlistToken = ""
 			return sendImgDataToAlist(data, cfg, meta, false)
 		}
 		return "", errors.New("upload error")

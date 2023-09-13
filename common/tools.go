@@ -19,6 +19,12 @@ func StructToString(data interface{}) string {
 	return string(bytes)
 }
 
+func BytesToMap(data []byte) (map[string]interface{}, error) {
+	dataMap := make(map[string]interface{})
+	err := json.Unmarshal(data, &dataMap)
+	return dataMap, err
+}
+
 func GetRandomString(size int) string {
 
 	var str []byte
@@ -29,4 +35,8 @@ func GetRandomString(size int) string {
 		str = append(str, charPool[rand.Intn(len(charPool))])
 	}
 	return string(str)
+}
+
+func RespSuccess(respMap map[string]interface{}) bool {
+	return int(respMap["code"].(float64)) == 200
 }
