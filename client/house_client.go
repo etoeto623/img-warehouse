@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +25,7 @@ func UploadImage(cfg *common.EnvConfig, meta *common.ImageUploadMeta) (string, e
 		return "", errors.New("no iamge data in clipboard")
 	}
 
-	fname, err := sendImgDataToAlist(imgData, cfg, meta)
+	fname, err := sendImgDataToAlist(imgData, cfg, meta, true)
 	if nil != err {
 		return "", err
 	}
@@ -68,7 +69,7 @@ func getImgDataFromClipboard() ([]byte, error) {
 }
 
 // 发送数据到alist服务端
-func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUploadMeta) (string, error) {
+func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUploadMeta, couldTry bool) (string, error) {
 	uploadUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_UPLOAD_API)
 	payload := bytes.NewReader(data)
 	req, err := http.NewRequest(http.MethodPut, uploadUrl, payload)
@@ -99,10 +100,22 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 
 	defer resp.Body.Close()
 
-	_, err = ioutil.ReadAll(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
 		return "", err
 	}
+
+	bodyMap := make(map[string]interface{})
+	if err = json.Unmarshal(bodyBytes, &bodyMap); nil != err {
+		return "", err
+	}
+	if int(bodyMap["code"].(float64)) != 200 {
+		if couldTry {
+			return sendImgDataToAlist(data, cfg, meta, false)
+		}
+		return "", errors.New("upload error")
+	}
+
 	return fileName, nil
 }
 
@@ -134,4 +147,18 @@ func acquireToken(cfg *common.EnvConfig) string {
 	}
 
 	return string(tokenBytes)
+}
+
+// 上传图片数据
+func DoSendImage(config *common.EnvConfig, meta *common.ImageUploadMeta) {
+	fname, err := UploadImage(config, meta)
+	if nil != err {
+		fmt.Println("error:", err.Error())
+	}
+	imgUrl := fmt.Sprintf("%s%s?vid=%s", config.ServerUrl, config.ImageViewApi, fname)
+	// write uploaded image url to clipboard
+	if nil == clipboard.Init() {
+		clipboard.Write(clipboard.FmtText, common.StrToBytes(imgUrl))
+	}
+	fmt.Println(imgUrl)
 }
