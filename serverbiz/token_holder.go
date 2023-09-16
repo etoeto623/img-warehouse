@@ -28,6 +28,11 @@ func FetchToken(cfg *common.EnvConfig, times int) string {
 	return FetchToken(cfg, times+1)
 }
 
+func RefreshToken(cfg *common.EnvConfig, times int) string {
+	AlistToken = ""
+	return FetchToken(cfg, times)
+}
+
 // 进行登录
 func doLogin(cfg *common.EnvConfig) error {
 	loginUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.LOGIN_API)

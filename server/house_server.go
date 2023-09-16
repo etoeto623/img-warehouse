@@ -22,6 +22,11 @@ func StartServer(config *common.EnvConfig) {
 		tk := serverbiz.FetchToken(config, 0)
 		w.Write([]byte(tk))
 	})
+	http.HandleFunc(common.SERVER_REFRESH_TOKEN_API, func(w http.ResponseWriter, r *http.Request) {
+		// 返回token
+		tk := serverbiz.RefreshToken(config, 0)
+		w.Write([]byte(tk))
+	})
 	http.ListenAndServe(":"+port, nil)
 }
 

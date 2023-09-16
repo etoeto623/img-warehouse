@@ -8,6 +8,7 @@ const IMAGE_LIST_API = "/api/fs/list"
 const LOGIN_API = "/api/auth/login"
 
 const SERVER_TOKEN_API = "/ftoken"
+const SERVER_REFRESH_TOKEN_API = "/rftoken"
 
 const ALIST_PASSWORD = "1qaz"
 

@@ -13,7 +13,6 @@ import (
 
 	"golang.design/x/clipboard"
 	"neolong.me/img-warehouse/common"
-	"neolong.me/img-warehouse/serverbiz"
 	"neolong.me/neotools/cipher"
 )
 
@@ -26,7 +25,7 @@ func UploadImage(cfg *common.EnvConfig, meta *common.ImageUploadMeta) (string, e
 		return "", errors.New("no iamge data in clipboard")
 	}
 
-	fname, err := sendImgDataToAlist(imgData, cfg, meta, true)
+	fname, err := sendImgDataToAlist(imgData, cfg, meta, false)
 	if nil != err {
 		return "", err
 	}
@@ -70,7 +69,7 @@ func getImgDataFromClipboard() ([]byte, error) {
 }
 
 // 发送数据到alist服务端
-func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUploadMeta, couldTry bool) (string, error) {
+func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUploadMeta, refreshToken bool) (string, error) {
 	uploadUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_UPLOAD_API)
 	payload := bytes.NewReader(data)
 	req, err := http.NewRequest(http.MethodPut, uploadUrl, payload)
@@ -88,7 +87,7 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 	req.Header.Add("File-Path", "%2F"+fileName)
 	if len(cfg.AlistPassword) <= 0 {
 		// 没指定密码，则从服务器获取
-		req.Header.Add("Authorization", acquireToken(cfg))
+		req.Header.Add("Authorization", acquireToken(cfg, refreshToken))
 	} else {
 		// 默认使用guest用户
 		req.Header.Add("Password", cfg.AlistPassword)
@@ -111,9 +110,8 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 		return "", err
 	}
 	if int(bodyMap["code"].(float64)) != 200 {
-		if couldTry {
-			serverbiz.AlistToken = ""
-			return sendImgDataToAlist(data, cfg, meta, false)
+		if !refreshToken {
+			return sendImgDataToAlist(data, cfg, meta, true)
 		}
 		return "", errors.New("upload error")
 	}
@@ -121,8 +119,12 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 	return fileName, nil
 }
 
-func acquireToken(cfg *common.EnvConfig) string {
-	tokenUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.SERVER_TOKEN_API)
+func acquireToken(cfg *common.EnvConfig, refresh bool) string {
+	api := common.SERVER_REFRESH_TOKEN_API
+	if !refresh {
+		api = common.SERVER_TOKEN_API
+	}
+	tokenUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, api)
 	req, err := http.NewRequest(http.MethodPut, tokenUrl, nil)
 	if nil != err {
 		fmt.Println("shit happens", err.Error())
