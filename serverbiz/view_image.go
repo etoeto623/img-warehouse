@@ -9,20 +9,22 @@ import (
 	"strings"
 
 	"neolong.me/img-warehouse/common"
+	"neolong.me/neotools/cipher"
 )
 
 func GetImageData(path string, cfg *common.EnvConfig, couldRetry bool) (*common.ImgViewRespData, error) {
 	imgGetUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_GET_API)
 
 	payload := strings.NewReader(genImgViewParamStr(path, cfg))
-
 	req, err := http.NewRequest(http.MethodPost, imgGetUrl, payload)
 	if nil != err {
 		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json;charset=UTF-8")
 	if len(cfg.AlistUser) > 0 {
-		req.Header.Add("Authorization", FetchToken(cfg, 0))
+		tk := FetchToken(cfg, 0)
+		tk, _ = cipher.AesDecryptString(tk, cfg.AesKey)
+		req.Header.Add("Authorization", tk)
 	}
 	resp, err := http.DefaultClient.Do(req)
 

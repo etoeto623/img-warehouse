@@ -38,18 +38,24 @@ func UploadImage(cfg *common.EnvConfig, meta *common.ImageUploadMeta) (string, e
 // 刷新仓库的资源列表
 func refreshWarehouseList(cfg *common.EnvConfig) {
 	data := common.ImageListMeta{
-		Page:     1,
-		PerPage:  0,
-		Path:     "/",
-		Password: cfg.AlistPassword,
-		Refresh:  true,
+		Page:    1,
+		PerPage: 0,
+		Path:    "/",
+		Refresh: true,
+	}
+	if len(cfg.AlistPassword) > 0 {
+		data.Password = cfg.AlistPassword
 	}
 	refreshUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, common.IMAGE_LIST_API)
 	payload := strings.NewReader(common.StructToString(data))
-	if req, err := http.NewRequest(http.MethodPost, refreshUrl, payload); nil == err {
-		req.Header.Add("Content-Type", "application/json; charset=utf-8")
-		http.DefaultClient.Do(req)
+
+	req, _ := http.NewRequest(http.MethodPost, refreshUrl, payload)
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
+	if len(cfg.AlistPassword) <= 0 {
+		req.Header.Add("Authorization", acquireToken(cfg, false))
 	}
+
+	http.DefaultClient.Do(req)
 }
 
 func getImageContentFromMeta(meta *common.ImageUploadMeta) ([]byte, error) {
@@ -87,7 +93,8 @@ func sendImgDataToAlist(data []byte, cfg *common.EnvConfig, meta *common.ImageUp
 	req.Header.Add("File-Path", "%2F"+fileName)
 	if len(cfg.AlistPassword) <= 0 {
 		// 没指定密码，则从服务器获取
-		req.Header.Add("Authorization", acquireToken(cfg, refreshToken))
+		tk := acquireToken(cfg, refreshToken)
+		req.Header.Add("Authorization", tk)
 	} else {
 		// 默认使用guest用户
 		req.Header.Add("Password", cfg.AlistPassword)
@@ -124,7 +131,7 @@ func acquireToken(cfg *common.EnvConfig, refresh bool) string {
 	if !refresh {
 		api = common.SERVER_TOKEN_API
 	}
-	tokenUrl := fmt.Sprintf("%s%s", cfg.AlistUrl, api)
+	tokenUrl := fmt.Sprintf("%s%s", cfg.ServerUrl, api)
 	req, err := http.NewRequest(http.MethodPut, tokenUrl, nil)
 	if nil != err {
 		fmt.Println("shit happens", err.Error())
@@ -144,7 +151,7 @@ func acquireToken(cfg *common.EnvConfig, refresh bool) string {
 		os.Exit(1)
 	}
 
-	tokenBytes, err := cipher.AesDecrypt(respBytes, cfg.AesKey)
+	tokenBytes, err := cipher.AesDecryptString(string(respBytes), cfg.AesKey)
 	if nil != err {
 		fmt.Println("shit happens", err.Error())
 		os.Exit(1)
